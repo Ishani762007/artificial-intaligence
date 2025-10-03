@@ -1,0 +1,86 @@
+import heapq
+
+# Define goal state
+GOAL_STATE = [[1, 2, 3],
+              [4, 5, 6],
+              [7, 8, 0]]  # 0 represents the blank tile
+
+# Helper to find position of a tile
+def find_position(state, value):
+    for i in range(3):
+        for j in range(3):
+            if state[i][j] == value:
+                return i, j
+
+# Heuristic: Manhattan Distance
+def manhattan_distance(state):
+    distance = 0
+    for i in range(3):
+        for j in range(3):
+            value = state[i][j]
+            if value != 0:
+                goal_i, goal_j = find_position(GOAL_STATE, value)
+                distance += abs(i - goal_i) + abs(j - goal_j)
+    return distance
+
+# Generate possible moves
+def get_neighbors(state):
+    neighbors = []
+    i, j = find_position(state, 0)
+    directions = [(-1,0), (1,0), (0,-1), (0,1)]  # Up, Down, Left, Right
+    for di, dj in directions:
+        ni, nj = i + di, j + dj
+        if 0 <= ni < 3 and 0 <= nj < 3:
+            new_state = [row[:] for row in state]
+            new_state[i][j], new_state[ni][nj] = new_state[ni][nj], new_state[i][j]
+            neighbors.append(new_state)
+    return neighbors
+
+# Check if two states are equal
+def is_goal(state):
+    return state == GOAL_STATE
+
+# A* Search Algorithm
+def a_star(start_state):
+    frontier = []
+    heapq.heappush(frontier, (manhattan_distance(start_state), 0, start_state, []))
+    visited = set()
+
+    while frontier:
+        est_total_cost, cost_so_far, current_state, path = heapq.heappop(frontier)
+        state_tuple = tuple(tuple(row) for row in current_state)
+
+        if state_tuple in visited:
+            continue
+        visited.add(state_tuple)
+
+        if is_goal(current_state):
+            return path + [current_state]
+
+        for neighbor in get_neighbors(current_state):
+            heapq.heappush(frontier, (
+                cost_so_far + 1 + manhattan_distance(neighbor),
+                cost_so_far + 1,
+                neighbor,
+                path + [current_state]
+            ))
+    return None
+
+# Display the solution path
+def print_solution(path):
+    for step, state in enumerate(path):
+        print(f"Step {step}:")
+        for row in state:
+            print(row)
+        print()
+
+# Example usage
+if __name__ == "__main__":
+    start_state = [[2, 8, 3],
+                   [1, 6, 4],
+                   [7, 0, 5]]
+    solution = a_star(start_state)
+    if solution:
+        print_solution(solution)
+    else:
+        print("No solution found.")
